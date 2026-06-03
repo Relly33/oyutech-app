@@ -33,7 +33,7 @@ export default function AppNavbar({ backHref, backLabel }: Props) {
             className="flex items-center gap-1.5 text-sm font-medium"
             style={{ color: "#aaaaaa" }}
           >
-            ← {backLabel ?? t.backHome}
+            {backLabel ?? t.backHome as string}
           </Link>
         ) : (
           <Link href="/" className="flex items-center gap-2">
