@@ -611,8 +611,8 @@ export const LESSON_STATE: Record<string, "completed"|"unlocked"|"locked"> = {
   "fn-1":"completed", "fn-2":"completed", "fn-3":"unlocked",
 };
 
-export function getLessonState(id: string): "completed"|"unlocked"|"locked" {
-  return LESSON_STATE[id] ?? "locked";
+export function getLessonState(id: string): "completed"|"unlocked" {
+  return (LESSON_STATE[id] === "completed") ? "completed" : "unlocked";
 }
 
 // Legacy exports kept for backward compat

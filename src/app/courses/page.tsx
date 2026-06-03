@@ -6,7 +6,7 @@ import AppNavbar from "@/components/AppNavbar";
 import { useLang } from "@/lib/LangContext";
 import { GRADE11_MODULES, GRADE12_MODULES, getLessonState, type Lesson } from "@/lib/lessons";
 
-type NodeState = "completed" | "unlocked" | "locked";
+type NodeState = "completed" | "unlocked";
 const NODE_OFFSETS = [0, 80, -60, 40, 60, -40];
 
 // ── Bottom sheet ──────────────────────────────────────────────────────────────
@@ -14,7 +14,6 @@ function BottomSheet({ lesson, color, state, onClose }: {
   lesson: Partial<Lesson>; color: string; state: NodeState; onClose: () => void;
 }) {
   const { t } = useLang();
-  const canStart = state !== "locked";
   return (
     <>
       <div className="fixed inset-0 z-40 bg-black/60 fade-in" onClick={onClose} />
@@ -24,7 +23,7 @@ function BottomSheet({ lesson, color, state, onClose }: {
         <div className="flex items-start gap-3 mb-4">
           <div className="w-12 h-12 rounded-xl flex items-center justify-center text-xl font-bold flex-none"
                style={{ background:`${color}22`, color }}>
-            {state === "completed" ? "✓" : state === "locked" ? "🔒" : "▶"}
+            {state === "completed" ? "✓" : "▶"}
           </div>
           <div>
             <h3 className="text-lg font-bold text-white">{lesson.title}</h3>
@@ -39,15 +38,12 @@ function BottomSheet({ lesson, color, state, onClose }: {
             </div>
           ))}
         </div>
-        {canStart && lesson.id ? (
+        {lesson.id && (
           <Link href={`/lesson/${lesson.id}`}
             className="flex items-center justify-center gap-2 w-full py-4 rounded-2xl text-white font-bold text-base"
             style={{ background:`linear-gradient(135deg,${color}cc,${color})`, boxShadow:`0 0 24px ${color}44` }}>
             {state === "completed" ? "Давтах →" : (t.startLesson as string)}
           </Link>
-        ) : (
-          <div className="flex items-center justify-center w-full py-4 rounded-2xl font-bold text-base"
-               style={{ background:"rgba(255,255,255,0.06)", color:"#555555" }}>🔒 Түгжигдсэн</div>
         )}
       </div>
     </>
@@ -58,18 +54,16 @@ function BottomSheet({ lesson, color, state, onClose }: {
 function LessonNode({ lesson, state, color, offset, onClick }: {
   lesson: Partial<Lesson>; state: NodeState; color: string; offset: number; onClick: () => void;
 }) {
-  const c = state === "completed", l = state === "locked";
+  const c = state === "completed";
   const nodeStyle: React.CSSProperties = c
     ? { background:color, boxShadow:`0 0 20px ${color}66`, border:`2px solid ${color}` }
-    : l
-    ? { background:"rgba(255,255,255,0.06)", border:"2px solid rgba(255,255,255,0.12)", opacity:0.45 }
     : { background:`${color}22`, border:`2px solid ${color}`, boxShadow:`0 0 16px ${color}44` };
   return (
     <button onClick={onClick} className="flex flex-col items-center gap-2" style={{ transform:`translateX(${offset}px)` }}>
       <div className="w-14 h-14 rounded-full flex items-center justify-center text-xl font-bold transition-transform active:scale-95" style={nodeStyle}>
-        {c ? "✓" : l ? "🔒" : <div className="w-3 h-3 rounded-full bg-white" />}
+        {c ? "✓" : <div className="w-3 h-3 rounded-full bg-white" />}
       </div>
-      <span className="text-xs font-medium text-center max-w-[80px] leading-tight" style={{ color:l?"#555555":"#aaaaaa" }}>
+      <span className="text-xs font-medium text-center max-w-[80px] leading-tight" style={{ color:"#aaaaaa" }}>
         {lesson.title}
       </span>
     </button>
