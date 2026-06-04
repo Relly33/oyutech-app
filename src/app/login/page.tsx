@@ -40,7 +40,15 @@ export default function LoginPage() {
       window.confirmationResult = result
       router.push('/verify?phone=' + encodeURIComponent(phone))
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Алдаа гарлаа'
+      const code = (err as { code?: string })?.code
+      const msg =
+        code === 'auth/operation-not-allowed'
+          ? 'Утасны дугаараар нэвтрэх идэвхжүүлэгдээгүй байна. Дахин оролдоно уу.'
+          : code === 'auth/invalid-phone-number'
+          ? 'Утасны дугаар буруу байна.'
+          : code === 'auth/too-many-requests'
+          ? 'Хэт олон удаа оролдлоо. Түр хүлээгээд дахин оролдоно уу.'
+          : 'Алдаа гарлаа. Дахин оролдоно уу.'
       setError(msg)
       if (window.recaptchaVerifier) {
         window.recaptchaVerifier.clear()
