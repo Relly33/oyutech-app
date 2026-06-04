@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { Suspense, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { doc, getDoc } from 'firebase/firestore'
@@ -13,7 +13,7 @@ declare global {
   }
 }
 
-export default function VerifyPage() {
+function VerifyContent() {
   const { user, loading } = useAuth()
   const router = useRouter()
   const params = useSearchParams()
@@ -179,5 +179,17 @@ export default function VerifyPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function VerifyPage() {
+  return (
+    <Suspense fallback={
+      <div style={{ background: '#0f0f1a', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ color: '#7F77DD', fontSize: 14 }}>Уншиж байна...</div>
+      </div>
+    }>
+      <VerifyContent />
+    </Suspense>
   )
 }
