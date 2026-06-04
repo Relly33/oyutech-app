@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/AuthContext'
 
 function useCounter(target: number, duration = 1800) {
@@ -146,12 +145,7 @@ const TESTIMONIALS = [
 
 export default function LandingPage() {
   const { user, loading } = useAuth()
-  const router = useRouter()
   const [scrolled, setScrolled] = useState(false)
-
-  useEffect(() => {
-    if (!loading && user) router.replace('/home')
-  }, [user, loading, router])
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40)
@@ -159,7 +153,7 @@ export default function LandingPage() {
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
-  if (loading || user) return null
+  if (loading) return null
 
   return (
     <div style={{ background: '#0f0f1a', color: '#ffffff', minHeight: '100vh' }}>
@@ -196,11 +190,13 @@ export default function LandingPage() {
           <span className="font-bold text-white">Ойутех</span>
         </div>
         <div className="flex items-center gap-3">
-          <Link href="/login" className="text-sm font-medium px-4 py-2 rounded-xl transition-colors"
-            style={{ color: '#aaaaaa' }}>Нэвтрэх</Link>
-          <Link href="/login" className="text-sm font-bold px-4 py-2 rounded-xl text-white"
+          {!user && (
+            <Link href="/login" className="text-sm font-medium px-4 py-2 rounded-xl transition-colors"
+              style={{ color: '#aaaaaa' }}>Нэвтрэх</Link>
+          )}
+          <Link href={user ? '/home' : '/courses'} className="text-sm font-bold px-4 py-2 rounded-xl text-white"
             style={{ background: 'linear-gradient(135deg,#534AB7,#7F77DD)' }}>
-            Үнэгүй эхлэх →
+            {user ? 'Үргэлжлүүлэх →' : 'Үнэгүй эхлэх →'}
           </Link>
         </div>
       </nav>
@@ -237,14 +233,16 @@ export default function LandingPage() {
           </div>
 
           <div className="flex flex-wrap gap-3 mb-10">
-            <Link href="/login" className="text-base font-bold px-6 py-3 rounded-2xl text-white"
+            <Link href={user ? '/home' : '/courses'} className="text-base font-bold px-6 py-3 rounded-2xl text-white"
               style={{ background: 'linear-gradient(135deg,#534AB7,#7F77DD)', boxShadow: '0 0 32px rgba(127,119,221,0.4)' }}>
-              Үнэгүй эхлэх →
+              {user ? 'Үргэлжлүүлэх →' : 'Үнэгүй эхлэх →'}
             </Link>
-            <Link href="/courses" className="text-base font-bold px-6 py-3 rounded-2xl"
-              style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)', color: '#ffffff' }}>
-              Демо үзэх
-            </Link>
+            {!user && (
+              <Link href="/courses" className="text-base font-bold px-6 py-3 rounded-2xl"
+                style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)', color: '#ffffff' }}>
+                Демо үзэх
+              </Link>
+            )}
           </div>
 
           {/* Counters */}

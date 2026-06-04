@@ -85,7 +85,7 @@ export default function AppNavbar({ backHref, backLabel }: Props) {
           {lang === 'mn' ? 'EN' : 'МН'}
         </button>
 
-        {user && (
+        {user ? (
           <div className="relative">
             <button
               onClick={() => setShowDropdown(d => !d)}
@@ -108,6 +108,11 @@ export default function AppNavbar({ backHref, backLabel }: Props) {
               </>
             )}
           </div>
+        ) : (
+          <Link href="/login" className="text-sm font-bold px-3 py-1.5 rounded-xl text-white"
+            style={{ background: 'linear-gradient(135deg,#534AB7,#7F77DD)' }}>
+            Нэвтрэх
+          </Link>
         )}
       </div>
     </header>

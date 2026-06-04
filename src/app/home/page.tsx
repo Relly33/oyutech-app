@@ -85,11 +85,15 @@ export default function HomePage() {
   useEffect(() => {
     if (!user) return
     getDoc(doc(db, 'users', user.uid)).then(snap => {
-      if (snap.exists()) setProfile(snap.data() as UserProfile)
+      if (!snap.exists()) {
+        router.replace('/onboard')
+        return
+      }
+      setProfile(snap.data() as UserProfile)
     })
     const fnProg = getModuleProgress('fn-3')
     setDoneCount(fnProg.quizDone ? 1 : 0)
-  }, [user])
+  }, [user, router])
 
   async function handleSignOut() {
     await signOut()

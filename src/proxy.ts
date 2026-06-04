@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-const PROTECTED = ['/home', '/courses', '/lesson', '/progress', '/onboard']
+const PROTECTED = ['/home', '/onboard']
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
@@ -20,5 +20,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/home/:path*', '/courses/:path*', '/lesson/:path*', '/progress/:path*', '/onboard/:path*'],
+  matcher: ['/home/:path*', '/onboard/:path*'],
 }

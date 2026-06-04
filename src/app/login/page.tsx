@@ -1,18 +1,11 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { RecaptchaVerifier, signInWithPhoneNumber } from 'firebase/auth'
 import { auth } from '@/lib/firebase'
 import { useAuth } from '@/lib/AuthContext'
-
-declare global {
-  interface Window {
-    confirmationResult: import('firebase/auth').ConfirmationResult
-    recaptchaVerifier: RecaptchaVerifier
-  }
-}
 
 export default function LoginPage() {
   const { user, loading } = useAuth()
@@ -20,7 +13,6 @@ export default function LoginPage() {
   const [phone, setPhone] = useState('')
   const [sending, setSending] = useState(false)
   const [error, setError] = useState('')
-  const recaptchaRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (!loading && user) router.replace('/home')
@@ -33,26 +25,43 @@ export default function LoginPage() {
     setError('')
     setSending(true)
     try {
-      if (!window.recaptchaVerifier) {
-        window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', { size: 'invisible' })
+      if ((window as any).recaptchaVerifier) {
+        (window as any).recaptchaVerifier.clear()
+        ;(window as any).recaptchaVerifier = null
       }
-      const result = await signInWithPhoneNumber(auth, '+976' + phone, window.recaptchaVerifier)
-      window.confirmationResult = result
+
+      const recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+        size: 'invisible',
+        callback: () => {},
+        'expired-callback': () => {},
+      })
+      ;(window as any).recaptchaVerifier = recaptchaVerifier
+
+      const fullPhone = '+976' + phone.replace(/\s/g, '')
+      console.log('Sending SMS to:', fullPhone)
+
+      const confirmationResult = await signInWithPhoneNumber(auth, fullPhone, recaptchaVerifier)
+      ;(window as any).confirmationResult = confirmationResult
+
+      console.log('SMS sent successfully')
       router.push('/verify?phone=' + encodeURIComponent(phone))
-    } catch (err: unknown) {
-      const code = (err as { code?: string })?.code
-      const msg =
-        code === 'auth/operation-not-allowed'
-          ? 'Утасны дугаараар нэвтрэх идэвхжүүлэгдээгүй байна. Дахин оролдоно уу.'
-          : code === 'auth/invalid-phone-number'
-          ? 'Утасны дугаар буруу байна.'
-          : code === 'auth/too-many-requests'
-          ? 'Хэт олон удаа оролдлоо. Түр хүлээгээд дахин оролдоно уу.'
-          : 'Алдаа гарлаа. Дахин оролдоно уу.'
-      setError(msg)
-      if (window.recaptchaVerifier) {
-        window.recaptchaVerifier.clear()
-        window.recaptchaVerifier = undefined as unknown as RecaptchaVerifier
+    } catch (error: any) {
+      console.error('Firebase error code:', error.code)
+      console.error('Firebase error message:', error.message)
+
+      if (error.code === 'auth/invalid-phone-number') {
+        setError('Утасны дугаар буруу байна. +976 XXXXXXXX форматаар оруулна уу.')
+      } else if (error.code === 'auth/too-many-requests') {
+        setError('Хэт олон оролдлого хийлээ. Түр хүлээгээд дахин оролдоно уу.')
+      } else if (error.code === 'auth/operation-not-allowed') {
+        setError('SMS үйлчилгээ идэвхжээгүй байна. Администраторт хандана уу.')
+      } else {
+        setError('Алдаа гарлаа: ' + error.message)
+      }
+
+      if ((window as any).recaptchaVerifier) {
+        (window as any).recaptchaVerifier.clear()
+        ;(window as any).recaptchaVerifier = null
       }
     } finally {
       setSending(false)
@@ -139,7 +148,7 @@ export default function LoginPage() {
         </div>
       </div>
 
-      <div id="recaptcha-container" ref={recaptchaRef} />
+      <div id="recaptcha-container" />
     </div>
   )
 }

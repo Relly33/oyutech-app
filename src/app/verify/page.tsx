@@ -80,12 +80,25 @@ function VerifyContent() {
     setError('')
     setVerifying(true)
     try {
-      const result = await window.confirmationResult.confirm(code)
+      const confirmationResult = (window as any).confirmationResult
+      if (!confirmationResult) {
+        setError('Сессий дууссан байна. Дахин нэвтэрнэ үү.')
+        router.push('/login')
+        return
+      }
+      const result = await confirmationResult.confirm(code)
       const uid = result.user.uid
       const snap = await getDoc(doc(db, 'users', uid))
       router.push(snap.exists() ? '/home' : '/onboard')
-    } catch {
-      setError('Код буруу байна. Дахин оролдоно уу.')
+    } catch (error: any) {
+      if (error.code === 'auth/invalid-verification-code') {
+        setError('Код буруу байна. Дахин оролдоно уу.')
+      } else if (error.code === 'auth/code-expired') {
+        setError('Код хугацаа дууссан. Дахин SMS авна уу.')
+        router.push('/login')
+      } else {
+        setError('Алдаа гарлаа. Дахин оролдоно уу.')
+      }
       setVerifying(false)
     }
   }
