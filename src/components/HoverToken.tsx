@@ -123,6 +123,78 @@ export default function HoverToken({
   );
 }
 
+// ── TokenText: inline tokens + static hint box in document flow ──────────────
+export function TokenText({
+  text,
+  tokens,
+  className,
+}: {
+  text: string;
+  tokens?: HoverHintToken[];
+  className?: string;
+}) {
+  const [activeMatch, setActiveMatch] = useState<string | null>(null);
+  const activeToken = tokens?.find((t) => t.match === activeMatch) ?? null;
+  const hasTokens = !!(tokens && tokens.length > 0);
+
+  const inlineParts: React.ReactNode[] = [];
+  let remaining = text;
+  let key = 0;
+
+  if (hasTokens) {
+    while (remaining.length > 0) {
+      let earliest = -1;
+      let matched: HoverHintToken | null = null;
+      for (const token of tokens!) {
+        const idx = remaining.indexOf(token.match);
+        if (idx !== -1 && (earliest === -1 || idx < earliest)) { earliest = idx; matched = token; }
+      }
+      if (!matched) { inlineParts.push(remaining); break; }
+      if (earliest > 0) inlineParts.push(remaining.slice(0, earliest));
+      const m = matched;
+      const isActive = activeMatch === m.match;
+      inlineParts.push(
+        <span
+          key={key++}
+          role="button"
+          tabIndex={0}
+          onClick={() => setActiveMatch(isActive ? null : m.match)}
+          onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") setActiveMatch(isActive ? null : m.match); }}
+          style={{ borderBottom: `1.5px dashed ${isActive ? "#7F77DD" : "rgba(127,119,221,0.55)"}`, color: isActive ? "#7F77DD" : "#b3adf0", cursor: "help", outline: "none" }}
+        >
+          {m.match}
+        </span>
+      );
+      remaining = remaining.slice(earliest + m.match.length);
+    }
+  } else {
+    inlineParts.push(text);
+  }
+
+  return (
+    <div>
+      <p className={className}>{inlineParts}</p>
+      {hasTokens && (
+        <div style={{ minHeight: 80, marginTop: 12 }}>
+          {activeToken ? (
+            <div style={{ borderRadius: 10, padding: "12px 14px", background: "#1a1a2e", border: "1px solid rgba(127,119,221,0.4)", boxShadow: "0 4px 16px rgba(0,0,0,0.35)" }}>
+              <p style={{ fontSize: 12, fontWeight: 700, color: "#7F77DD", marginBottom: 4 }}>{activeToken.hint.title}</p>
+              <p style={{ fontSize: 12, color: "#cccccc", lineHeight: 1.5, marginBottom: activeToken.hint.formula ? 8 : 0 }}>{activeToken.hint.body}</p>
+              {activeToken.hint.formula && (
+                <p style={{ fontSize: 12, fontFamily: "monospace", background: "rgba(127,119,221,0.15)", borderRadius: 6, padding: "4px 8px", color: "#a89fea" }}>{activeToken.hint.formula}</p>
+              )}
+            </div>
+          ) : (
+            <p style={{ color: "#555", textAlign: "center", fontSize: 13, paddingTop: 24 }}>
+              👆 Томьёоны хэсэг дээр дарж үзээрэй
+            </p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function renderWithTokens(text: string, tokens?: HoverHintToken[]) {
   if (!tokens || tokens.length === 0) return text;
 

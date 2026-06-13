@@ -6,7 +6,7 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useLang } from "@/lib/LangContext";
 import { LESSONS, type Slide, type LessonQuizQ, type HoverHintToken } from "@/lib/lessons";
-import { renderWithTokens } from "@/components/HoverToken";
+import { TokenText } from "@/components/HoverToken";
 import { addXp, updateProgress } from "@/lib/progress";
 
 const FunctionGraph = dynamic(() => import("@/components/FunctionGraph"), { ssr: false });
@@ -278,7 +278,7 @@ function PredictSlide({ slide, onAnswered, onAdvance }: {
         style={{ background:"rgba(251,191,36,0.15)", color:"#fbbf24" }}>
         🔮 Урьдчилан тааварла
       </span>
-      <p className="text-lg font-semibold text-white leading-relaxed">{renderWithTokens(slide.question, slide.tokens)}</p>
+      <TokenText text={slide.question} tokens={slide.tokens} className="text-lg font-semibold text-white leading-relaxed" />
 
       {slide.base && (
         <canvas ref={canvasRef} width={320} height={180}
@@ -462,7 +462,7 @@ function ScaffoldSlide({ slide, onDone }: {
 
       <div className="rounded-xl p-4" style={{ background:"rgba(186,117,23,0.1)", border:"1px solid rgba(186,117,23,0.3)" }}>
         <p className="text-xs font-bold mb-1" style={{ color:"#BA7517" }}>Бодлого</p>
-        <p className="font-mono font-bold text-white text-base">{renderWithTokens(slide.problem, slide.tokens)}</p>
+        <TokenText text={slide.problem} tokens={slide.tokens} className="font-mono font-bold text-white text-base" />
       </div>
 
       <div className="space-y-1.5">
@@ -556,7 +556,7 @@ function QuizSlide({ q, tokens, onAnswered }: { q: LessonQuizQ; tokens?: HoverHi
       <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ background:"rgba(127,119,221,0.2)", color:"#7F77DD" }}>
         {t.questionLabel as string} · +{q.xp} XP
       </span>
-      <p className="text-lg font-semibold text-white leading-relaxed">{renderWithTokens(q.text, tokens)}</p>
+      <TokenText text={q.text} tokens={tokens} className="text-lg font-semibold text-white leading-relaxed" />
       <div className="space-y-2.5">
         {opts.map((opt, i) => {
           let bg = "rgba(255,255,255,0.05)", border = "rgba(255,255,255,0.1)", textCol = "#ffffff";
@@ -1180,7 +1180,7 @@ export default function LessonPage() {
 
   return (
     <div className="min-h-screen flex flex-col" style={{ background:"#0f0f1a" }}>
-      <header className="sticky top-0 z-30 flex items-center gap-3 px-4 h-14"
+      <header className="sticky top-0 z-50 flex items-center gap-3 px-4 h-14"
         style={{ background:"#13131f", borderBottom:"1px solid rgba(255,255,255,0.07)" }}>
         <Link href="/courses" className="text-sm font-medium mr-1" style={{ color:"#aaaaaa" }}>←</Link>
         <div className="flex-1 min-w-0">
@@ -1198,7 +1198,7 @@ export default function LessonPage() {
       </header>
 
       <div className="flex-1 overflow-y-auto">
-        <div className="max-w-xl mx-auto px-4 pb-32 pt-4" key={animKey}>
+        <div className="max-w-xl mx-auto px-4 pb-32" style={{ paddingTop: 70 }} key={animKey}>
           <div className="fade-up">
             {slide.type === "intro"            && <IntroSlide          slide={slide} />}
             {slide.type === "concept"          && <ConceptSlide        slide={slide} onReady={() => setConReady(true)} />}
