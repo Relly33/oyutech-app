@@ -117,10 +117,6 @@ export default function HomePage() {
           <span className="font-bold text-white hidden sm:block">Ойутех</span>
         </Link>
         <div className="flex items-center gap-2">
-          <span className="flex items-center gap-1 text-sm font-semibold px-2.5 py-1 rounded-lg"
-            style={{ background: 'rgba(255,255,255,0.06)', color: '#f97316' }}>🔥 {streak}</span>
-          <span className="flex items-center gap-1 text-sm font-semibold px-2.5 py-1 rounded-lg"
-            style={{ background: 'rgba(255,255,255,0.06)', color: '#fbbf24' }}>⭐ {xp}</span>
           <div className="relative">
             <button
               onClick={() => setShowDropdown(d => !d)}
