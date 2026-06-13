@@ -44,10 +44,29 @@ body {
 }
 
 @keyframes tooltipIn {
-  from { opacity: 0; transform: translateX(-50%) translateY(4px); }
-  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 .hover-tooltip { animation: tooltipIn 180ms ease-out both; }
+
+.tooltip-caret-above::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: var(--caret-offset, 50%);
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-top-color: rgba(127,119,221,0.45);
+}
+.tooltip-caret-below::after {
+  content: '';
+  position: absolute;
+  bottom: 100%;
+  left: var(--caret-offset, 50%);
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-bottom-color: rgba(127,119,221,0.45);
+}
 
 .fade-up        { animation: fadeUp   0.32s ease-out both; }
 .fade-in        { animation: fadeIn   0.25s ease-out both; }
