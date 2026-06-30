@@ -69,10 +69,10 @@ function HeroGraph() {
     ctx.beginPath(); ctx.moveTo(cx, 0); ctx.lineTo(cx, H); ctx.stroke()
     ctx.beginPath(); ctx.moveTo(0, cy); ctx.lineTo(W, cy); ctx.stroke()
 
-    // Parabola
-    const grad = ctx.createLinearGradient(0, 0, W, 0)
-    grad.addColorStop(0, '#7F77DD')
-    grad.addColorStop(1, '#1D9E75')
+    // Parabola — radial gradient: teal at vertex, purple at edges
+    const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, cx)
+    grad.addColorStop(0, '#1D9E75')
+    grad.addColorStop(1, '#7F77DD')
     ctx.strokeStyle = grad
     ctx.lineWidth = 2.5
     ctx.shadowBlur = 12
@@ -87,35 +87,78 @@ function HeroGraph() {
     }
     ctx.stroke()
     ctx.shadowBlur = 0
+
+    // Glowing dot at x=1 (y = a·1² = a), moves as slider changes
+    const dotX = cx + scale
+    const dotY = cy - a * scale
+    ctx.shadowBlur = 18
+    ctx.shadowColor = '#7F77DD'
+    ctx.beginPath()
+    ctx.arc(dotX, dotY, 7, 0, Math.PI * 2)
+    ctx.fillStyle = 'rgba(127,119,221,0.3)'
+    ctx.fill()
+    ctx.shadowBlur = 0
+    ctx.beginPath()
+    ctx.arc(dotX, dotY, 3.5, 0, Math.PI * 2)
+    ctx.fillStyle = '#ffffff'
+    ctx.fill()
   }, [a])
 
   return (
-    <div className="rounded-2xl overflow-hidden p-4" style={{ background: '#13131f', border: '1px solid rgba(127,119,221,0.3)' }}>
-      <div className="flex items-center justify-between mb-3">
-        <span className="text-xs font-bold" style={{ color: '#7F77DD' }}>y = ax²</span>
-        <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: 'rgba(29,158,117,0.2)', color: '#1D9E75' }}>Бодит цаг</span>
-      </div>
-      <canvas ref={canvasRef} width={260} height={160} className="rounded-xl w-full" style={{ background: '#0f0f1a' }} />
-      <div className="mt-3 space-y-1">
-        <div className="flex justify-between text-xs" style={{ color: '#aaaaaa' }}>
-          <span>a = {a.toFixed(1)}</span>
+    <div style={{ position: 'relative' }}>
+      {/* Peek card behind for stacked-depth effect */}
+      <div style={{
+        position: 'absolute', inset: 0, borderRadius: 16,
+        background: '#181828', border: '1px solid rgba(255,255,255,0.04)',
+        transform: 'translate(15px, 15px)', opacity: 0.55, filter: 'blur(1px)',
+      }} />
+      {/* Main card */}
+      <div style={{
+        position: 'relative', background: '#13131f',
+        border: '1px solid rgba(255,255,255,0.08)', borderRadius: 16,
+        padding: 16, boxShadow: '0 20px 60px rgba(0,0,0,0.4)',
+      }}>
+        {/* Header row */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span className="pulse-dot" style={{
+              display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: '#1D9E75',
+            }} />
+            <span style={{ fontSize: 12, color: '#aaaaaa', fontWeight: 600 }}>Амьд жишээ · парабол</span>
+          </div>
+          <span style={{ fontSize: 12, color: '#555555' }}>чирээд үзээрэй</span>
         </div>
-        <input
-          type="range" min={-3} max={3} step={0.1} value={a}
-          onChange={e => setA(parseFloat(e.target.value))}
-          className="w-full" style={{ accentColor: '#7F77DD' }}
-        />
-      </div>
-      <div className="mt-3 rounded-xl p-3" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}>
-        <p className="text-xs font-semibold text-white mb-1">Асуулт:</p>
-        <p className="text-xs" style={{ color: '#aaaaaa' }}>a = 2 үед парабол хэрхэн өөрчлөгдөх вэ?</p>
-        <div className="flex gap-2 mt-2">
-          {['Нарийсна', 'Өргөсөнө'].map((opt, i) => (
-            <button key={opt} className="flex-1 text-xs py-1.5 rounded-lg font-medium"
-              style={{ background: i === 0 ? 'rgba(29,158,117,0.2)' : 'rgba(255,255,255,0.05)', color: i === 0 ? '#1D9E75' : '#aaaaaa', border: i === 0 ? '1px solid #1D9E75' : '1px solid transparent' }}>
-              {opt}
-            </button>
-          ))}
+        <canvas ref={canvasRef} width={260} height={160}
+          style={{ background: '#0d0d1a', borderRadius: 10, width: '100%', display: 'block' }} />
+        {/* Live equation */}
+        <div style={{ marginTop: 12, fontSize: 13, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}>
+          <span style={{ color: '#ffffff' }}>y =</span>
+          <span style={{ color: '#1D9E75' }}>{a.toFixed(1)}</span>
+          <span style={{ color: '#ffffff' }}>· x²</span>
+        </div>
+        {/* Slider with endpoint labels */}
+        <div style={{ marginTop: 6 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#555555', marginBottom: 2 }}>
+            <span>0.1</span><span>3.0</span>
+          </div>
+          <input type="range" min={0.1} max={3} step={0.1} value={a}
+            onChange={e => setA(parseFloat(e.target.value))}
+            style={{ width: '100%', accentColor: '#7F77DD' }} />
+        </div>
+        {/* Question block */}
+        <div style={{ marginTop: 12, borderRadius: 10, padding: 12, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}>
+          <p style={{ fontSize: 12, fontWeight: 600, color: '#ffffff', margin: '0 0 4px' }}>Асуулт:</p>
+          <p style={{ fontSize: 12, color: '#aaaaaa', margin: 0 }}>a = 2 үед парабол хэрхэн өөрчлөгдөх вэ?</p>
+          <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+            {['Нарийсна', 'Өргөсөнө'].map((opt, i) => (
+              <button key={opt} style={{
+                flex: 1, fontSize: 12, padding: '6px 0', borderRadius: 8, fontWeight: 500, cursor: 'pointer',
+                background: i === 0 ? 'rgba(29,158,117,0.2)' : 'rgba(255,255,255,0.05)',
+                color: i === 0 ? '#1D9E75' : '#aaaaaa',
+                border: i === 0 ? '1px solid #1D9E75' : '1px solid transparent',
+              }}>{opt}</button>
+            ))}
+          </div>
         </div>
       </div>
     </div>
@@ -175,6 +218,8 @@ export default function LandingPage() {
         @keyframes fadeUp { from { opacity:0; transform:translateY(20px) } to { opacity:1; transform:translateY(0) } }
         .float { animation: float 3s ease-in-out infinite; }
         @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+        .pulse-dot { animation: pulseDot 2s ease-in-out infinite; }
+        @keyframes pulseDot { 0%,100% { box-shadow: 0 0 0 0 rgba(29,158,117,0.5); } 50% { box-shadow: 0 0 0 5px rgba(29,158,117,0); } }
       `}</style>
 
       {/* Navbar */}
@@ -274,6 +319,9 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Section divider */}
+      <div style={{ height: 1, background: 'linear-gradient(90deg, transparent, rgba(127,119,221,0.1), transparent)', maxWidth: 960, margin: '0 auto' }} />
+
       {/* Features */}
       <section className="max-w-6xl mx-auto px-6 py-20">
         <div className="text-center mb-12">
@@ -296,45 +344,63 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Section divider */}
+      <div style={{ height: 1, background: 'linear-gradient(90deg, transparent, rgba(29,158,117,0.12), transparent)', maxWidth: 960, margin: '0 auto' }} />
+
       {/* How it works */}
       <section className="max-w-4xl mx-auto px-6 py-20">
-        <h2 className="text-3xl font-black text-white text-center mb-12">4 алхамд эхлэх</h2>
+        <div className="text-center mb-12">
+          <p className="text-xs font-bold tracking-widest mb-2" style={{ color: '#1D9E75' }}>ХЭРХЭН АЖИЛЛАДАГ ВЭ</p>
+          <h2 className="text-3xl font-black text-white">4 алхамд эхлэх</h2>
+        </div>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-          {STEPS.map(({ icon, title, desc }, i) => (
-            <div key={title} className="flex flex-col items-center text-center gap-3">
-              <div className="relative">
-                <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-2xl"
-                  style={{ background: 'rgba(127,119,221,0.15)', border: '1px solid rgba(127,119,221,0.25)' }}>{icon}</div>
-                <div className="absolute -top-2 -right-2 w-6 h-6 rounded-full flex items-center justify-center text-xs font-black text-white"
-                  style={{ background: 'linear-gradient(135deg,#534AB7,#7F77DD)' }}>{i + 1}</div>
+          {STEPS.map(({ icon, title, desc }, i) => {
+            const stepColors = ['#7F77DD', '#1D9E75', '#D85A30', '#BA7517']
+            const c = stepColors[i]
+            return (
+              <div key={title} className="flex flex-col items-center text-center gap-3">
+                <div className="relative">
+                  <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-2xl"
+                    style={{ background: `${c}22`, border: `1px solid ${c}44` }}>{icon}</div>
+                  <div className="absolute -top-2 -right-2 w-6 h-6 rounded-lg flex items-center justify-center text-xs font-black text-white"
+                    style={{ background: c }}>{i + 1}</div>
+                </div>
+                <h3 className="font-bold text-white">{title}</h3>
+                <p className="text-xs" style={{ color: '#aaaaaa' }}>{desc}</p>
               </div>
-              <h3 className="font-bold text-white">{title}</h3>
-              <p className="text-xs" style={{ color: '#aaaaaa' }}>{desc}</p>
-            </div>
-          ))}
+            )
+          })}
         </div>
       </section>
 
+      {/* Section divider */}
+      <div style={{ height: 1, background: 'linear-gradient(90deg, transparent, rgba(216,90,48,0.12), transparent)', maxWidth: 960, margin: '0 auto' }} />
+
       {/* Testimonials */}
-      <section className="max-w-6xl mx-auto px-6 py-20">
-        <h2 className="text-3xl font-black text-white text-center mb-12">Тэд хэлж байна</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-          {TESTIMONIALS.map(({ quote, name, grade, avatar }) => (
-            <div key={name} className="rounded-2xl p-6" style={{ background: '#13131f', border: '1px solid rgba(255,255,255,0.07)' }}>
-              <div className="flex gap-0.5 mb-4">
-                {Array(5).fill(0).map((_, i) => <span key={i} className="text-yellow-400">★</span>)}
-              </div>
-              <p className="text-sm leading-relaxed mb-5" style={{ color: '#cccccc' }}>"{quote}"</p>
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full flex items-center justify-center text-xl"
-                  style={{ background: 'rgba(127,119,221,0.15)' }}>{avatar}</div>
-                <div>
-                  <p className="font-bold text-white text-sm">{name}</p>
-                  <p className="text-xs" style={{ color: '#aaaaaa' }}>{grade}</p>
+      <section style={{ background: 'linear-gradient(180deg, rgba(216,90,48,0.04), transparent)' }}>
+        <div className="max-w-6xl mx-auto px-6 py-20">
+          <div className="text-center mb-12">
+            <p className="text-xs font-bold tracking-widest mb-2" style={{ color: '#D85A30' }}>СЭТГЭГДЭЛ</p>
+            <h2 className="text-3xl font-black text-white">Тэд хэлж байна</h2>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            {TESTIMONIALS.map(({ quote, name, grade, avatar }) => (
+              <div key={name} className="rounded-2xl p-6" style={{ background: '#13131f', border: '1px solid rgba(255,255,255,0.07)' }}>
+                <div className="flex gap-0.5 mb-4">
+                  {Array(5).fill(0).map((_, i) => <span key={i} className="text-yellow-400">★</span>)}
+                </div>
+                <p className="text-sm leading-relaxed mb-5" style={{ color: '#cccccc' }}>"{quote}"</p>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full flex items-center justify-center text-xl"
+                    style={{ background: 'rgba(127,119,221,0.15)' }}>{avatar}</div>
+                  <div>
+                    <p className="font-bold text-white text-sm">{name}</p>
+                    <p className="text-xs" style={{ color: '#aaaaaa' }}>{grade}</p>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </section>
 
@@ -365,7 +431,12 @@ export default function LandingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t" style={{ borderColor: 'rgba(255,255,255,0.07)' }}>
+      <footer style={{ borderTop: '1px solid rgba(255,255,255,0.07)', position: 'relative' }}>
+        <div style={{
+          position: 'absolute', top: -50, left: '50%', transform: 'translateX(-50%)',
+          width: 500, height: 100, pointerEvents: 'none',
+          background: 'radial-gradient(ellipse at center, rgba(127,119,221,0.1), transparent 70%)',
+        }} />
         <div className="max-w-6xl mx-auto px-6 py-8 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <div className="w-7 h-7 rounded-lg flex items-center justify-center font-bold text-white text-xs"
