@@ -44,121 +44,210 @@ function AnimatedCounter({ target, suffix, label }: { target: number; suffix: st
 
 function HeroGraph() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const [a, setA] = useState(1)
+  const sliderRef = useRef<HTMLInputElement>(null)
+  const eqRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    const canvas = canvasRef.current
-    if (!canvas) return
-    const ctx = canvas.getContext('2d')
-    if (!ctx) return
-    const W = canvas.width, H = canvas.height
-    const cx = W / 2, cy = H / 2
-    const scale = 30
+    if (!canvasRef.current || !sliderRef.current || !eqRef.current) return
+    const canvas = canvasRef.current as HTMLCanvasElement
+    const slider = sliderRef.current as HTMLInputElement
+    const eqEl = eqRef.current as HTMLDivElement
+    const ctxRaw = canvas.getContext('2d')
+    if (!ctxRaw) return
+    const ctx = ctxRaw as CanvasRenderingContext2D
 
-    ctx.clearRect(0, 0, W, H)
+    const dpr = window.devicePixelRatio || 1
+    let a = 0.6
+    let hx = 1.6
+    let dragging = false
+    let rafId = 0
 
-    // Grid
-    ctx.strokeStyle = 'rgba(255,255,255,0.05)'
-    ctx.lineWidth = 1
-    for (let x = 0; x <= W; x += scale) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke() }
-    for (let y = 0; y <= H; y += scale) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke() }
-
-    // Axes
-    ctx.strokeStyle = 'rgba(255,255,255,0.2)'
-    ctx.lineWidth = 1.5
-    ctx.beginPath(); ctx.moveTo(cx, 0); ctx.lineTo(cx, H); ctx.stroke()
-    ctx.beginPath(); ctx.moveTo(0, cy); ctx.lineTo(W, cy); ctx.stroke()
-
-    // Parabola — radial gradient: teal at vertex, purple at edges
-    const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, cx)
-    grad.addColorStop(0, '#1D9E75')
-    grad.addColorStop(1, '#7F77DD')
-    ctx.strokeStyle = grad
-    ctx.lineWidth = 2.5
-    ctx.shadowBlur = 12
-    ctx.shadowColor = '#7F77DD88'
-    ctx.beginPath()
-    let first = true
-    for (let px = 0; px <= W; px++) {
-      const x = (px - cx) / scale
-      const y = a * x * x
-      const py = cy - y * scale
-      if (first) { ctx.moveTo(px, py); first = false } else ctx.lineTo(px, py)
+    function resize() {
+      const rect = canvas.getBoundingClientRect()
+      if (!rect.width) return
+      canvas.width = Math.round(rect.width * dpr)
+      canvas.height = Math.round(rect.height * dpr)
     }
-    ctx.stroke()
-    ctx.shadowBlur = 0
 
-    // Glowing dot at x=1 (y = a·1² = a), moves as slider changes
-    const dotX = cx + scale
-    const dotY = cy - a * scale
-    ctx.shadowBlur = 18
-    ctx.shadowColor = '#7F77DD'
-    ctx.beginPath()
-    ctx.arc(dotX, dotY, 7, 0, Math.PI * 2)
-    ctx.fillStyle = 'rgba(127,119,221,0.3)'
-    ctx.fill()
-    ctx.shadowBlur = 0
-    ctx.beginPath()
-    ctx.arc(dotX, dotY, 3.5, 0, Math.PI * 2)
-    ctx.fillStyle = '#ffffff'
-    ctx.fill()
-  }, [a])
+    function updateEq() {
+      eqEl.innerHTML = `y = <span style="color:#1D9E75;font-weight:700">${a.toFixed(2)}</span> · x²`
+    }
+
+    function draw(t: number) {
+      const W = canvas.width / dpr
+      const H = canvas.height / dpr
+      if (!W || !H) return
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+      ctx.clearRect(0, 0, W, H)
+
+      const cx = W / 2, cy = H * 0.88
+      const xScale = W / 6, yScale = H / 5
+      const glowPulse = Math.sin(t / 800) * 0.5 + 0.5
+
+      // Grid
+      ctx.strokeStyle = 'rgba(255,255,255,0.045)'
+      ctx.lineWidth = 1
+      for (let gx = -3; gx <= 3; gx++) {
+        const px = cx + gx * xScale
+        ctx.beginPath(); ctx.moveTo(px, 0); ctx.lineTo(px, H); ctx.stroke()
+      }
+      for (let gy = 0; gy <= 5; gy++) {
+        const py = cy - gy * yScale
+        ctx.beginPath(); ctx.moveTo(0, py); ctx.lineTo(W, py); ctx.stroke()
+      }
+
+      // Axes
+      ctx.strokeStyle = 'rgba(255,255,255,0.18)'
+      ctx.lineWidth = 1.5
+      ctx.beginPath(); ctx.moveTo(cx, 0); ctx.lineTo(cx, H); ctx.stroke()
+      ctx.beginPath(); ctx.moveTo(0, cy); ctx.lineTo(W, cy); ctx.stroke()
+
+      // Parabola — horizontal gradient purple→teal→purple, pulsing glow
+      const grad = ctx.createLinearGradient(0, 0, W, 0)
+      grad.addColorStop(0, '#7F77DD')
+      grad.addColorStop(0.5, '#1D9E75')
+      grad.addColorStop(1, '#7F77DD')
+      ctx.strokeStyle = grad
+      ctx.lineWidth = 3.4
+      ctx.lineJoin = 'round'
+      ctx.shadowBlur = 16 + glowPulse * 10
+      ctx.shadowColor = '#7F77DD'
+      ctx.beginPath()
+      let first = true
+      for (let px = 0; px <= W; px++) {
+        const x = (px - cx) / xScale
+        const py = cy - a * x * x * yScale
+        if (py > H + 20) { first = true; continue }
+        if (first) { ctx.moveTo(px, py); first = false } else ctx.lineTo(px, py)
+      }
+      ctx.stroke()
+      ctx.shadowBlur = 0
+
+      // Draggable handle dot at (hx, a·hx²)
+      const hdotX = cx + hx * xScale
+      const hdotY = cy - a * hx * hx * yScale
+      ctx.shadowBlur = 20 + glowPulse * 8
+      ctx.shadowColor = '#1D9E75'
+      ctx.beginPath()
+      ctx.arc(hdotX, hdotY, 11, 0, Math.PI * 2)
+      ctx.fillStyle = 'rgba(29,158,117,0.18)'
+      ctx.fill()
+      ctx.shadowBlur = 0
+      ctx.beginPath()
+      ctx.arc(hdotX, hdotY, 8, 0, Math.PI * 2)
+      ctx.strokeStyle = 'rgba(255,255,255,0.6)'
+      ctx.lineWidth = 1.5
+      ctx.stroke()
+      ctx.beginPath()
+      ctx.arc(hdotX, hdotY, 5, 0, Math.PI * 2)
+      ctx.fillStyle = '#1D9E75'
+      ctx.fill()
+    }
+
+    function loop(t: number) { draw(t); rafId = requestAnimationFrame(loop) }
+
+    function handleDrag(clientX: number, clientY: number) {
+      const rect = canvas.getBoundingClientRect()
+      const W = canvas.width / dpr, H = canvas.height / dpr
+      const cx = W / 2, cy = H * 0.88
+      const xScale = W / 6, yScale = H / 5
+      hx = Math.max(0.8, Math.min(2.3, (clientX - rect.left - cx) / xScale))
+      const graphY = (cy - (clientY - rect.top)) / yScale
+      a = Math.max(0.1, Math.min(3, graphY / (hx * hx)))
+      slider.value = a.toFixed(2)
+      updateEq()
+    }
+
+    function onMouseDown(e: MouseEvent) {
+      e.preventDefault(); dragging = true; canvas.style.cursor = 'grabbing'
+      handleDrag(e.clientX, e.clientY)
+    }
+    function onMouseMove(e: MouseEvent) { if (dragging) handleDrag(e.clientX, e.clientY) }
+    function onMouseUp() { dragging = false; canvas.style.cursor = 'grab' }
+    function onTouchStart(e: TouchEvent) {
+      e.preventDefault(); dragging = true
+      if (e.changedTouches[0]) handleDrag(e.changedTouches[0].clientX, e.changedTouches[0].clientY)
+    }
+    function onTouchMove(e: TouchEvent) {
+      if (!dragging) return; e.preventDefault()
+      if (e.touches[0]) handleDrag(e.touches[0].clientX, e.touches[0].clientY)
+    }
+    function onTouchEnd() { dragging = false }
+    function onSliderInput() { a = parseFloat(slider.value); updateEq() }
+
+    resize()
+    updateEq()
+    rafId = requestAnimationFrame(loop)
+
+    canvas.addEventListener('mousedown', onMouseDown)
+    canvas.addEventListener('touchstart', onTouchStart, { passive: false })
+    window.addEventListener('mousemove', onMouseMove)
+    window.addEventListener('touchmove', onTouchMove, { passive: false })
+    window.addEventListener('mouseup', onMouseUp)
+    window.addEventListener('touchend', onTouchEnd)
+    slider.addEventListener('input', onSliderInput)
+    window.addEventListener('resize', resize)
+
+    return () => {
+      cancelAnimationFrame(rafId)
+      canvas.removeEventListener('mousedown', onMouseDown)
+      canvas.removeEventListener('touchstart', onTouchStart)
+      window.removeEventListener('mousemove', onMouseMove)
+      window.removeEventListener('touchmove', onTouchMove)
+      window.removeEventListener('mouseup', onMouseUp)
+      window.removeEventListener('touchend', onTouchEnd)
+      slider.removeEventListener('input', onSliderInput)
+      window.removeEventListener('resize', resize)
+    }
+  }, [])
 
   return (
-    <div style={{ position: 'relative' }}>
-      {/* Peek card behind for stacked-depth effect */}
+    <div style={{ position: 'relative', maxWidth: 560, width: '100%' }}>
+      {/* Ambient glow — replaces ::before pseudo-element */}
       <div style={{
-        position: 'absolute', inset: 0, borderRadius: 16,
-        background: '#181828', border: '1px solid rgba(255,255,255,0.04)',
-        transform: 'translate(15px, 15px)', opacity: 0.55, filter: 'blur(1px)',
+        position: 'absolute', top: -14, right: -14, bottom: -14, left: -14,
+        borderRadius: 36,
+        background: 'radial-gradient(circle at 60% 40%, rgba(29,158,117,0.25), transparent 70%)',
+        filter: 'blur(24px)', pointerEvents: 'none', zIndex: 0,
+        animation: 'widgetGlow 4s ease-in-out infinite',
       }} />
-      {/* Main card */}
+      {/* Card */}
       <div style={{
-        position: 'relative', background: '#13131f',
-        border: '1px solid rgba(255,255,255,0.08)', borderRadius: 16,
-        padding: 16, boxShadow: '0 20px 60px rgba(0,0,0,0.4)',
+        position: 'relative', zIndex: 1, background: '#13131f',
+        border: '1px solid rgba(255,255,255,0.09)',
+        borderRadius: 22, padding: 22,
+        boxShadow: '0 30px 70px -24px rgba(0,0,0,0.7)',
       }}>
-        {/* Header row */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span className="pulse-dot" style={{
-              display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: '#1D9E75',
-            }} />
-            <span style={{ fontSize: 12, color: '#aaaaaa', fontWeight: 600 }}>Амьд жишээ · парабол</span>
+        {/* Header */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 9, fontSize: 13.5, fontWeight: 600, color: 'rgba(255,255,255,0.82)' }}>
+            <span className="pulse-dot" style={{ display: 'inline-block', width: 9, height: 9, borderRadius: '50%', background: '#1D9E75', boxShadow: '0 0 10px #1D9E75' }} />
+            Амьд жишээ · парабол
           </div>
-          <span style={{ fontSize: 12, color: '#555555' }}>чирээд үзээрэй</span>
+          <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.42)', fontWeight: 500 }}>чирээд үзээрэй</span>
         </div>
-        <canvas ref={canvasRef} width={260} height={160}
-          style={{ background: '#0d0d1a', borderRadius: 10, width: '100%', display: 'block' }} />
-        {/* Live equation */}
-        <div style={{ marginTop: 12, fontSize: 13, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}>
-          <span style={{ color: '#ffffff' }}>y =</span>
-          <span style={{ color: '#1D9E75' }}>{a.toFixed(1)}</span>
-          <span style={{ color: '#ffffff' }}>· x²</span>
+        {/* Canvas */}
+        <div style={{
+          position: 'relative', width: '100%', height: 300, borderRadius: 14,
+          background: 'linear-gradient(180deg, #0e0e18, #101019)',
+          overflow: 'hidden', border: '1px solid rgba(255,255,255,0.06)',
+          touchAction: 'none',
+        }}>
+          <canvas ref={canvasRef} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', display: 'block', cursor: 'grab' }} />
         </div>
-        {/* Slider with endpoint labels */}
-        <div style={{ marginTop: 6 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#555555', marginBottom: 2 }}>
-            <span>0.1</span><span>3.0</span>
+        {/* Footer: equation + label */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 16, gap: 16 }}>
+          <div ref={eqRef} style={{ fontSize: 18, fontWeight: 700, color: '#fff', fontVariantNumeric: 'tabular-nums' }} />
+          <div style={{ fontSize: 12.5, color: 'rgba(255,255,255,0.5)' }}>
+            нээлт <span style={{ color: '#1D9E75', fontWeight: 600 }}>a</span> коэффициент
           </div>
-          <input type="range" min={0.1} max={3} step={0.1} value={a}
-            onChange={e => setA(parseFloat(e.target.value))}
-            style={{ width: '100%', accentColor: '#7F77DD' }} />
         </div>
-        {/* Question block */}
-        <div style={{ marginTop: 12, borderRadius: 10, padding: 12, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}>
-          <p style={{ fontSize: 12, fontWeight: 600, color: '#ffffff', margin: '0 0 4px' }}>Асуулт:</p>
-          <p style={{ fontSize: 12, color: '#aaaaaa', margin: 0 }}>a = 2 үед парабол хэрхэн өөрчлөгдөх вэ?</p>
-          <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-            {['Нарийсна', 'Өргөсөнө'].map((opt, i) => (
-              <button key={opt} style={{
-                flex: 1, fontSize: 12, padding: '6px 0', borderRadius: 8, fontWeight: 500, cursor: 'pointer',
-                background: i === 0 ? 'rgba(29,158,117,0.2)' : 'rgba(255,255,255,0.05)',
-                color: i === 0 ? '#1D9E75' : '#aaaaaa',
-                border: i === 0 ? '1px solid #1D9E75' : '1px solid transparent',
-              }}>{opt}</button>
-            ))}
-          </div>
+        {/* Slider */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 10 }}>
+          <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)' }}>0.1</span>
+          <input ref={sliderRef} type="range" min="0.1" max="3" step="0.01" defaultValue="0.6"
+            style={{ flex: 1, accentColor: '#7F77DD', height: 6, cursor: 'pointer' }} />
+          <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)' }}>3.0</span>
         </div>
       </div>
     </div>
@@ -220,6 +309,7 @@ export default function LandingPage() {
         @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
         .pulse-dot { animation: pulseDot 2s ease-in-out infinite; }
         @keyframes pulseDot { 0%,100% { box-shadow: 0 0 0 0 rgba(29,158,117,0.5); } 50% { box-shadow: 0 0 0 5px rgba(29,158,117,0); } }
+        @keyframes widgetGlow { 0%,100% { opacity: .55; } 50% { opacity: .9; } }
       `}</style>
 
       {/* Navbar */}
@@ -301,20 +391,9 @@ export default function LandingPage() {
           </div>
         </div>
 
-        {/* Right: floating mock lesson card */}
-        <div className="flex-1 max-w-sm w-full relative">
-          <div className="float">
-            <HeroGraph />
-          </div>
-          {/* Floating badges */}
-          <div className="absolute -top-3 -left-4 px-3 py-1.5 rounded-full text-sm font-bold shadow-lg"
-            style={{ background: '#13131f', border: '1px solid rgba(249,115,22,0.4)', color: '#f97316' }}>
-            🔥 7 дараалал
-          </div>
-          <div className="absolute -bottom-3 -right-2 px-3 py-1.5 rounded-full text-sm font-bold shadow-lg"
-            style={{ background: '#13131f', border: '1px solid rgba(251,191,36,0.4)', color: '#fbbf24' }}>
-            ⭐ +20 XP
-          </div>
+        {/* Right: hero graph widget */}
+        <div className="flex-1 w-full">
+          <HeroGraph />
         </div>
         </div>
       </section>
