@@ -120,11 +120,13 @@ input[type="range"]::-moz-range-thumb {
   text-align: center;
   max-width: 620px;
   margin: 0 auto 56px;
+}
+.how-header.will-animate {
   opacity: 0;
   transform: translateY(24px);
   transition: opacity .6s ease, transform .65s cubic-bezier(.2,.75,.25,1);
 }
-.how-header.visible { opacity: 1; transform: none; }
+.how-header.will-animate.visible { opacity: 1; transform: none; }
 .how-eyebrow {
   font-size: 14px; font-weight: 700; color: #1D9E75;
   letter-spacing: .04em; text-transform: uppercase; margin-bottom: 14px;
@@ -140,12 +142,14 @@ input[type="range"]::-moz-range-thumb {
 }
 .how-step {
   text-align: left;
+}
+.how-step.will-animate {
   opacity: 0;
   transform: translateY(28px);
   transition: opacity .6s ease var(--delay, 0ms),
               transform .65s cubic-bezier(.2,.75,.25,1) var(--delay, 0ms);
 }
-.how-step.visible { opacity: 1; transform: none; }
+.how-step.will-animate.visible { opacity: 1; transform: none; }
 .step-num {
   width: 52px; height: 52px; border-radius: 14px;
   display: grid; place-items: center;
@@ -156,5 +160,7 @@ input[type="range"]::-moz-range-thumb {
 .step-body { font-size: 14.5px; line-height: 1.55; color: rgba(255,255,255,.58); margin: 0; }
 
 @media (prefers-reduced-motion: reduce) {
-  .how-header, .how-step { opacity: 1 !important; transform: none !important; transition: none !important; }
+  .how-header.will-animate, .how-step.will-animate {
+    opacity: 1 !important; transform: none !important; transition: none !important;
+  }
 }

@@ -309,6 +309,13 @@ export default function LandingPage() {
   }, [])
 
   useEffect(() => {
+    const els: Element[] = []
+    if (headerRef.current) els.push(headerRef.current)
+    stepRefs.current.forEach(el => { if (el) els.push(el) })
+
+    // Opt in to animation only after JS confirms the page is interactive
+    els.forEach(el => el.classList.add('will-animate'))
+
     const io = new IntersectionObserver((entries) => {
       entries.forEach(en => {
         if (en.isIntersecting) {
@@ -318,8 +325,7 @@ export default function LandingPage() {
       })
     }, { threshold: 0.18 })
 
-    if (headerRef.current) io.observe(headerRef.current)
-    stepRefs.current.forEach(el => { if (el) io.observe(el) })
+    els.forEach(el => io.observe(el))
 
     return () => io.disconnect()
   }, [])
