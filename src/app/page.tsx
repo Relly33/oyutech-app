@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useAuth } from '@/lib/AuthContext'
+import MathFloatLayer from '@/components/MathFloatLayer'
 
 function useCounter(target: number, duration = 1800) {
   const [value, setValue] = useState(0)
@@ -202,7 +203,9 @@ export default function LandingPage() {
       </nav>
 
       {/* Hero */}
-      <section className="max-w-6xl mx-auto px-6 pt-28 pb-20 flex flex-col lg:flex-row items-center gap-12">
+      <section className="max-w-6xl mx-auto px-6 pt-28 pb-20" style={{ position: 'relative', overflow: 'hidden' }}>
+        <MathFloatLayer />
+        <div className="flex flex-col lg:flex-row items-center gap-12" style={{ position: 'relative', zIndex: 1 }}>
         {/* Left */}
         <div className="flex-1">
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold mb-6"
@@ -267,6 +270,7 @@ export default function LandingPage() {
             style={{ background: '#13131f', border: '1px solid rgba(251,191,36,0.4)', color: '#fbbf24' }}>
             ⭐ +20 XP
           </div>
+        </div>
         </div>
       </section>
 
