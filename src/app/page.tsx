@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useAuth } from '@/lib/AuthContext'
 import MathFloatLayer from '@/components/MathFloatLayer'
@@ -263,11 +263,31 @@ const FEATURES = [
   { icon: '🤖', title: 'AI Монгол Туслах', sub: '24/7 бэлэн багш.', desc: 'Асуултаа Монгол хэлээр асууж, алдаагаа ойлгомжтой тайлбарлуулж, суралцахдаа итгэлтэй болоорой.', color: '#7F77DD' },
 ]
 
-const STEPS = [
-  { icon: '📱', title: 'Бүртгүүлэх', desc: 'Утасны дугаараар 30 секундэд' },
-  { icon: '🎓', title: 'Анги сонгох', desc: '11 эсвэл 12-р анги' },
-  { icon: '📚', title: 'Сурах', desc: 'Интерактив хичээлүүд' },
-  { icon: '🏆', title: 'Ахих', desc: 'XP цуглуулж, дараалал хадгалах' },
+const HOW_STEPS = [
+  {
+    title: 'Бүртгүүл',
+    body: 'Утасны дугаараараа 30 секундэд бүртгүүлээд эхэл. Карт шаардахгүй.',
+    gradient: 'linear-gradient(135deg,#534AB7,#7F77DD)',
+    shadow: '0 8px 24px rgba(83,74,183,0.45)',
+  },
+  {
+    title: 'Түвшнээ тогтоо',
+    body: 'Богино шалгалтаар мэдлэгийн түвшнээ илрүүлж, өөрт тань тохирсон зам гарна.',
+    gradient: 'linear-gradient(135deg,#1D9E75,#27c08f)',
+    shadow: '0 8px 24px rgba(29,158,117,0.45)',
+  },
+  {
+    title: 'Өдөр бүр дасга',
+    body: 'Тоглоом шиг богино дасгалаар алхам алхмаар ахь. Өдөрт 15 минут хангалттай.',
+    gradient: 'linear-gradient(135deg,#D85A30,#e87b54)',
+    shadow: '0 8px 24px rgba(216,90,48,0.45)',
+  },
+  {
+    title: 'Үр дүнгээ хар',
+    body: 'Явц, эзэмшил, амжилтаа хянаж урамш. ЭЕШ-д бэлэн болж буйгаа мэдэр.',
+    gradient: 'linear-gradient(135deg,#BA7517,#d29024)',
+    shadow: '0 8px 24px rgba(186,117,23,0.45)',
+  },
 ]
 
 const TESTIMONIALS = [
@@ -279,11 +299,29 @@ const TESTIMONIALS = [
 export default function LandingPage() {
   const { user, loading } = useAuth()
   const [scrolled, setScrolled] = useState(false)
+  const headerRef = useRef<HTMLDivElement>(null)
+  const stepRefs = useRef<(HTMLDivElement | null)[]>([])
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40)
     window.addEventListener('scroll', onScroll)
     return () => window.removeEventListener('scroll', onScroll)
+  }, [])
+
+  useEffect(() => {
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach(en => {
+        if (en.isIntersecting) {
+          en.target.classList.add('visible')
+          io.unobserve(en.target)
+        }
+      })
+    }, { threshold: 0.18 })
+
+    if (headerRef.current) io.observe(headerRef.current)
+    stepRefs.current.forEach(el => { if (el) io.observe(el) })
+
+    return () => io.disconnect()
   }, [])
 
   if (loading) return null
@@ -427,28 +465,31 @@ export default function LandingPage() {
       <div style={{ height: 1, background: 'linear-gradient(90deg, transparent, rgba(29,158,117,0.12), transparent)', maxWidth: 960, margin: '0 auto' }} />
 
       {/* How it works */}
-      <section className="max-w-4xl mx-auto px-6 py-20">
-        <div className="text-center mb-12">
-          <p className="text-xs font-bold tracking-widest mb-2" style={{ color: '#1D9E75' }}>ХЭРХЭН АЖИЛЛАДАГ ВЭ</p>
-          <h2 className="text-3xl font-black text-white">4 алхамд эхлэх</h2>
-        </div>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-          {STEPS.map(({ icon, title, desc }, i) => {
-            const stepColors = ['#7F77DD', '#1D9E75', '#D85A30', '#BA7517']
-            const c = stepColors[i]
-            return (
-              <div key={title} className="flex flex-col items-center text-center gap-3">
-                <div className="relative">
-                  <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-2xl"
-                    style={{ background: `${c}22`, border: `1px solid ${c}44` }}>{icon}</div>
-                  <div className="absolute -top-2 -right-2 w-6 h-6 rounded-lg flex items-center justify-center text-xs font-black text-white"
-                    style={{ background: c }}>{i + 1}</div>
+      <section className="how-section">
+        <div className="how-container">
+          <div className="how-header" ref={headerRef}>
+            <div className="how-eyebrow">Хэрхэн ажилладаг вэ</div>
+            <h2 className="how-title">Дөрвөн алхамд эхэл</h2>
+          </div>
+          <div className="how-grid">
+            {HOW_STEPS.map((step, i) => (
+              <div
+                key={i}
+                className="how-step"
+                ref={el => { stepRefs.current[i] = el }}
+                style={{ '--delay': `${i * 100}ms` } as React.CSSProperties}
+              >
+                <div
+                  className="step-num"
+                  style={{ background: step.gradient, boxShadow: step.shadow }}
+                >
+                  {i + 1}
                 </div>
-                <h3 className="font-bold text-white">{title}</h3>
-                <p className="text-xs" style={{ color: '#aaaaaa' }}>{desc}</p>
+                <h3 className="step-heading">{step.title}</h3>
+                <p className="step-body">{step.body}</p>
               </div>
-            )
-          })}
+            ))}
+          </div>
         </div>
       </section>
 
